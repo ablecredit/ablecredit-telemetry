@@ -1,0 +1,202 @@
+{
+  "name": "@ablecredit/telemetry",
+  "version": "0.1.0",
+  "description": "OpenTelemetry setup for AbleCredit services (browser and Node.js), exported to SigNoz over OTLP/HTTP.",
+  "license": "UNLICENSED",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ablecredit/ablecredit-telemetry.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": [
+    "./dist/register.js",
+    "./dist/register.cjs"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "docs"
+  ],
+  "exports": {
+    "./web": {
+      "import": {
+        "types": "./dist/web.d.ts",
+        "default": "./dist/web.js"
+      },
+      "require": {
+        "types": "./dist/web.d.cts",
+        "default": "./dist/web.cjs"
+      }
+    },
+    "./node": {
+      "import": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      },
+      "require": {
+        "types": "./dist/node.d.cts",
+        "default": "./dist/node.cjs"
+      }
+    },
+    "./node/register": {
+      "import": {
+        "types": "./dist/register.d.ts",
+        "default": "./dist/register.js"
+      },
+      "require": {
+        "types": "./dist/register.d.cts",
+        "default": "./dist/register.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@opentelemetry/api": "~1.9.1",
+    "@opentelemetry/api-logs": "^0.223.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.81.2",
+    "@opentelemetry/context-async-hooks": "~2.12.0",
+    "@opentelemetry/context-zone": "~2.12.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.223.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.223.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
+    "@opentelemetry/instrumentation-document-load": "^0.68.0",
+    "@opentelemetry/instrumentation-fetch": "^0.223.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.223.0",
+    "@opentelemetry/resources": "~2.12.0",
+    "@opentelemetry/sdk-logs": "^0.223.0",
+    "@opentelemetry/sdk-metrics": "~2.12.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
+    "@opentelemetry/sdk-trace-base": "~2.12.0",
+    "@opentelemetry/sdk-trace-node": "~2.12.0",
+    "@opentelemetry/sdk-trace-web": "~2.12.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.13.0",
+    "jsdom": "^29.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^4.1.12"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@opentelemetry/api": "~1.9.1",
+    "@opentelemetry/api-logs": "^0.223.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.81.2",
+    "@opentelemetry/context-zone": "~2.12.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.223.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.223.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
+    "@opentelemetry/instrumentation-document-load": "^0.68.0",
+    "@opentelemetry/instrumentation-fetch": "^0.223.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.223.0",
+    "@opentelemetry/resources": "~2.12.0",
+    "@opentelemetry/sdk-logs": "^0.223.0",
+    "@opentelemetry/sdk-metrics": "~2.12.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
+    "@opentelemetry/sdk-trace-base": "~2.12.0",
+    "@opentelemetry/sdk-trace-web": "~2.12.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api-logs": {
+      "optional": true
+    },
+    "@opentelemetry/auto-instrumentations-node": {
+      "optional": true
+    },
+    "@opentelemetry/context-zone": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-logs-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-metrics-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-trace-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-document-load": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-fetch": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-xml-http-request": {
+      "optional": true
+    },
+    "@opentelemetry/resources": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-logs": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-metrics": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-node": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-base": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-web": {
+      "optional": true
+    },
+    "@opentelemetry/semantic-conventions": {
+      "optional": true
+    }
+  },
+  "ablecredit": {
+    "installSets": {
+      "node": [
+        "@opentelemetry/api",
+        "@opentelemetry/api-logs",
+        "@opentelemetry/resources",
+        "@opentelemetry/semantic-conventions",
+        "@opentelemetry/sdk-trace-base",
+        "@opentelemetry/sdk-metrics",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/sdk-node",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/auto-instrumentations-node"
+      ],
+      "web": [
+        "@opentelemetry/api",
+        "@opentelemetry/resources",
+        "@opentelemetry/semantic-conventions",
+        "@opentelemetry/sdk-trace-base",
+        "@opentelemetry/sdk-trace-web",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-fetch",
+        "@opentelemetry/instrumentation-xml-http-request",
+        "@opentelemetry/instrumentation-document-load",
+        "@opentelemetry/context-zone"
+      ]
+    }
+  },
+  "bin": {
+    "ablecredit-telemetry": "./dist/cli.js"
+  }
+}

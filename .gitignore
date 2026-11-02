@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+python/dist/

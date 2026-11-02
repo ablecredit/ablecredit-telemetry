@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ablecredit-telemetry"
+version = "0.1.0"
+description = "OpenTelemetry setup for AbleCredit Python services, exported to SigNoz over OTLP/HTTP."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "opentelemetry-api>=1.33,<2",
+    "opentelemetry-sdk>=1.33,<2",
+    "opentelemetry-exporter-otlp-proto-http>=1.33,<2",
+    "opentelemetry-instrumentation-logging>=0.54b0",
+]
+
+[project.optional-dependencies]
+fastapi = ["opentelemetry-instrumentation-fastapi>=0.54b0"]
+httpx = ["opentelemetry-instrumentation-httpx>=0.54b0"]
+botocore = ["opentelemetry-instrumentation-botocore>=0.54b0"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "httpx>=0.27", "fastapi>=0.110", "opentelemetry-instrumentation-fastapi>=0.54b0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ablecredit_telemetry"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+# Optional extras: absent unless the matching extra is installed.
+module = ["opentelemetry.instrumentation.httpx", "opentelemetry.instrumentation.botocore"]
+ignore_missing_imports = true
