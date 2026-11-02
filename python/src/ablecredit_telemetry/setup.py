@@ -7,26 +7,31 @@ import threading
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
-from opentelemetry import metrics, trace
+from opentelemetry import metrics as otel_metrics
+from opentelemetry import trace as otel_trace
 from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.logging.handler import LoggingHandler
 from opentelemetry.sdk._logs import LoggerProvider, LogRecordProcessor
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import MetricReader, PeriodicExportingMetricReader
+from opentelemetry.sdk.metrics.export import MetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from .config import TelemetryConfig, signal_url
+from .config import TelemetryConfig
+from .exporters import otlp_log_processor, otlp_metric_reader, otlp_span_processor
 
 logger = logging.getLogger(__name__)
 
 _lock = threading.Lock()
 _active: Telemetry | None = None
+
+# The exporter's own log lines must not be exported again, or a failing export would produce logs that fail to export...
+_SKIP_LOGGER_PREFIXES = ("opentelemetry", "urllib3")
+
+
+class _SkipTelemetryLoggers(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not record.name.startswith(_SKIP_LOGGER_PREFIXES)
 
 
 @dataclass
@@ -69,6 +74,8 @@ def setup_telemetry(
     headers: Mapping[str, str] | None = None,
     resource_attributes: Mapping[str, str] | None = None,
     enabled: bool | None = None,
+    traces: bool = True,
+    metrics: bool = True,
     logs: bool = True,
     log_level: int = logging.INFO,
     metrics_interval_seconds: float = 30.0,
@@ -85,6 +92,10 @@ def setup_telemetry(
 
     The ``extra_*`` arguments add destinations next to SigNoz without replacing it, e.g. an Axiom span
     processor during a migration. With extras but no endpoint, telemetry goes only to the extras.
+
+    ``traces``, ``metrics`` and ``logs`` choose which signals the library sets up. Turn one off when your service
+    already creates that provider itself (for example for Axiom), and add SigNoz to it with the functions in
+    :mod:`ablecredit_telemetry.exporters` instead.
 
     Calling it again returns the original handle instead of registering a second set of providers.
     """
@@ -108,36 +119,28 @@ def setup_telemetry(
             return Telemetry(config=config, enabled=False)
 
         resource = Resource.create(config.resource_attributes_dict())
-        endpoint_url = config.endpoint
-        headers_dict = dict(config.headers)
 
-        tracer_provider = TracerProvider(resource=resource)
-        span_processors: list[SpanProcessor] = list(extra_span_processors)
-        readers: list[MetricReader] = list(extra_metric_readers)
+        tracer_provider: TracerProvider | None = None
+        if traces:
+            tracer_provider = TracerProvider(resource=resource)
+            span_processors: list[SpanProcessor] = list(extra_span_processors)
+            if (signoz_spans := otlp_span_processor(config)) is not None:
+                span_processors.append(signoz_spans)
+            for processor in span_processors:
+                tracer_provider.add_span_processor(processor)
+            otel_trace.set_tracer_provider(tracer_provider)
+
+        meter_provider: MeterProvider | None = None
+        if metrics:
+            readers: list[MetricReader] = list(extra_metric_readers)
+            if (signoz_metrics := otlp_metric_reader(config, metrics_interval_seconds)) is not None:
+                readers.append(signoz_metrics)
+            meter_provider = MeterProvider(resource=resource, metric_readers=readers)
+            otel_metrics.set_meter_provider(meter_provider)
+
         log_processors: list[LogRecordProcessor] = list(extra_log_processors)
-        if endpoint_url:
-            span_processors.append(
-                BatchSpanProcessor(OTLPSpanExporter(endpoint=signal_url(endpoint_url, "traces"), headers=headers_dict))
-            )
-            readers.append(
-                PeriodicExportingMetricReader(
-                    OTLPMetricExporter(endpoint=signal_url(endpoint_url, "metrics"), headers=headers_dict),
-                    export_interval_millis=int(metrics_interval_seconds * 1000),
-                )
-            )
-            if logs:
-                log_processors.append(
-                    BatchLogRecordProcessor(
-                        OTLPLogExporter(endpoint=signal_url(endpoint_url, "logs"), headers=headers_dict)
-                    )
-                )
-        for processor in span_processors:
-            tracer_provider.add_span_processor(processor)
-        trace.set_tracer_provider(tracer_provider)
-
-        meter_provider = MeterProvider(resource=resource, metric_readers=readers)
-        metrics.set_meter_provider(meter_provider)
-
+        if (signoz_logs := otlp_log_processor(config)) is not None:
+            log_processors.append(signoz_logs)
         logger_provider: LoggerProvider | None = None
         log_handler: logging.Handler | None = None
         if logs and log_processors:
@@ -146,6 +149,7 @@ def setup_telemetry(
                 logger_provider.add_log_record_processor(log_processor)
             set_logger_provider(logger_provider)
             log_handler = LoggingHandler(level=log_level, logger_provider=logger_provider)
+            log_handler.addFilter(_SkipTelemetryLoggers())
             logging.getLogger().addHandler(log_handler)
 
         _active = Telemetry(

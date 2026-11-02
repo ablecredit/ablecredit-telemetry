@@ -115,6 +115,39 @@ setup_telemetry("ai-v2", extra_span_processors=[axiom])
 - Register everything through this one call. Do not create a second tracer provider elsewhere.
 - Sending prompt or completion text to two systems doubles where that data lives. Check that is acceptable.
 
+## You already create your own providers (for example for Axiom)
+
+Some services build their own OpenTelemetry providers and send to another backend such as Axiom. You do **not** have to
+hand those over to the library. Keep your setup exactly as it is, and add SigNoz **next to** it:
+
+```python
+from ablecredit_telemetry import TelemetryConfig, otlp_metric_reader, otlp_span_processor
+
+config = TelemetryConfig.from_env(service_name="ai-node-executor", environment="prod")   # reads OTEL_* variables
+
+# traces: your provider and your Axiom processor stay as they are; SigNoz gets one more processor
+provider = TracerProvider(resource=resource)
+provider.add_span_processor(axiom_processor)                       # unchanged
+if (signoz := otlp_span_processor(config)) is not None:           # None when SigNoz export is off
+    provider.add_span_processor(signoz)
+
+# metrics: readers are given when the provider is created
+readers = [axiom_reader]
+if (signoz_reader := otlp_metric_reader(config)) is not None:
+    readers.append(signoz_reader)
+meter_provider = MeterProvider(metric_readers=readers, resource=resource)
+
+# logs: let the library own the log provider only
+setup_telemetry("ai-node-executor", traces=False, metrics=False)
+```
+
+- Each processor has its own queue and worker thread. A slow or unreachable SigNoz cannot delay or drop what Axiom receives.
+- The builders return `None` when SigNoz export is off, so the code is "add it if there is one".
+- `setup_telemetry(traces=False, metrics=False)` creates no tracer or meter provider, so yours are left alone. It sets up the
+  log export (the handler skips the exporter's own log lines, so a failing export cannot feed itself).
+- Adding SigNoz does not change the spans, attributes or datasets your other backend receives. If you also add new
+  attributes to spans, both backends receive them.
+
 ## Queues (SQS)
 
 How to send and receive with the trace attached: [recipe](recipes.md#follow-a-background-job-across-a-queue).

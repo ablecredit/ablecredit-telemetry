@@ -5,6 +5,9 @@ All notable changes are recorded here. Versions follow [semver](https://semver.o
 
 ## Unreleased
 
+- Python: `otlp_span_processor`, `otlp_metric_reader` and `otlp_log_processor` add SigNoz to providers a service already owns (for example
+  one that exports to Axiom). `setup_telemetry` gained `traces`, `metrics` and `logs` switches, and its log handler no longer re-exports
+  the exporter's own log lines.
 - New helpers (`/node` and `/web`): `captureTraceContext()` and `runInTraceContext()` keep work that runs later, outside any request, in the
   trace of the request that started it; `withoutTracing()` keeps polling loops out of the traces.
 - Types: added `typesVersions`, so TypeScript projects that still use `"moduleResolution": "Node"` can import `@ablecredit/telemetry/node` and `/web` (they failed with TS2307 before).
