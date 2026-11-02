@@ -44,6 +44,11 @@ The package builds itself during install (you will see a short build step). Comm
 > Use the **same form (HTTPS or SSH) across your team and your build servers.** `package-lock.json` remembers the exact
 > URL, so a machine that can only reach GitHub one way will fail on a lockfile written the other way.
 
+> **Note for public repositories:** npm writes GitHub dependencies into `package-lock.json` as `git+ssh://git@github.com/...`
+> even when you installed with HTTPS. That is only the recorded address. For a public repository `npm ci` downloads a plain
+> HTTPS archive first, so Docker and CI builds work with no SSH key and no token (tested with a clean, no-cache Docker
+> build). If the repository is ever made private again, installs fall back to SSH and the steps for deploy keys apply.
+
 ### Step 2 (JavaScript only): install the OpenTelemetry packages
 
 The library needs the official OpenTelemetry packages next to it. One command installs the exact, tested versions:

@@ -54,7 +54,7 @@ def test_exports_spans_with_headers_to_the_endpoint(receiver):
     assert telemetry.enabled is True
     assert setup_telemetry("again", endpoint=url, env={}) is telemetry
 
-    with span("unit-of-work", {"application.id": "ACGR1A116C11521BC39A509"}):
+    with span("unit-of-work", {"application.id": "EXAMPLE-APP-0001"}):
         pass
     telemetry.shutdown()
     telemetry.shutdown()
@@ -65,7 +65,7 @@ def test_exports_spans_with_headers_to_the_endpoint(receiver):
     assert headers.get("x-api-key") == "secret"
     assert b"e2e-service" in body
     assert b"unit-of-work" in body
-    assert b"ACGR1A116C11521BC39A509" in body
+    assert b"EXAMPLE-APP-0001" in body
 
 
 def test_extra_span_processor_gets_spans_alongside_the_endpoint(receiver):

@@ -10,6 +10,7 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { trace } from '@opentelemetry/api';
 import { buildResourceAttributes, resolveConfig, signalUrl } from '../shared/config.js';
 import type { BaseTelemetryOptions, TelemetryHandle } from '../shared/types.js';
+import { urlPrefixPattern } from '../shared/url.js';
 
 export { getTraceId, setSpanAttributes, withSpan } from '../shared/span.js';
 export type { AttributeInput, TelemetryHandle } from '../shared/types.js';
@@ -21,9 +22,15 @@ export interface WebTelemetryOptions extends BaseTelemetryOptions {
    * URLs of YOUR backends that should receive the `traceparent` header, so browser and server spans
    * join into one trace. Cross-origin URLs must also allow that header in their CORS config.
    * Same-origin requests are always propagated.
+   *
+   * A string must equal the WHOLE request URL; use a RegExp (e.g. `/^https:\/\/api\.example\.com/`) to match
+   * everything under an address.
    */
   propagateTraceHeaderCorsUrls?: Array<string | RegExp>;
-  /** Requests to these URLs are not traced. The telemetry endpoint itself is always excluded. */
+  /**
+   * Requests to these URLs are not traced (same matching rules as above). The telemetry endpoint itself is always
+   * excluded.
+   */
   ignoreUrls?: Array<string | RegExp>;
   /** Fraction of traces to record, 0..1. Defaults to 1 (record everything). */
   sampleRatio?: number;
@@ -59,7 +66,7 @@ export function initWebTelemetry(options: WebTelemetryOptions): TelemetryHandle 
   provider.register({ contextManager: new ZoneContextManager() });
 
   // Never trace the exporter's own requests, or every export would create a span that triggers another export.
-  const ignoreUrls = [endpoint, ...(options.ignoreUrls ?? [])];
+  const ignoreUrls = [urlPrefixPattern(endpoint), ...(options.ignoreUrls ?? [])];
   const toggles = options.instrumentations ?? {};
   const httpOptions = { propagateTraceHeaderCorsUrls: options.propagateTraceHeaderCorsUrls, ignoreUrls };
 

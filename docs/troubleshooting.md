@@ -55,6 +55,12 @@ Match the message to the cause:
 | `git: command not found` during a Docker build | The build image has no `git` (slim images do not). | Install dependencies in a build stage that has git, such as the full `node` image. |
 | `Host key verification failed` in Docker/CI | GitHub is not in `known_hosts`. | Add `ssh-keyscan github.com >> ~/.ssh/known_hosts`. |
 
+## `TS2307: Cannot find module '@ablecredit/telemetry/node'` in a TypeScript project
+
+The project uses the old `"moduleResolution": "Node"`, which cannot read the package's `exports` map. Versions that include
+`typesVersions` (see the changelog) work with it. Update the package (`npm update @ablecredit/telemetry`), or set
+`moduleResolution` to `Node16` / `Bundler` in `tsconfig.json`.
+
 ## The package installed, but `dist` is missing
 
 The build runs on install through the `prepare` script, which needs `devDependencies`. npm provides them for git

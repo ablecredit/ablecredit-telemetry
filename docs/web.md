@@ -77,8 +77,11 @@ Restart the collector afterwards. You do this once per frontend address.
 
 To make the browser's click and the API's work one trace:
 
-1. Put your backend addresses in `propagateTraceHeaderCorsUrls` (a list of strings or regular expressions). Requests to
-   the page's own address are included automatically.
+1. Put your backend addresses in `propagateTraceHeaderCorsUrls`. Requests to the page's own address are included
+   automatically. **Use a regular expression, not a string:** a string must equal the *entire* request URL, so
+   `'https://api.example.com'` would never match `https://api.example.com/v1/things`. Write
+   `/^https:\/\/api\.example\.com/` instead, or build one from a variable:
+   `new RegExp('^' + baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))`.
 2. Make each backend accept the `traceparent` and `tracestate` headers in its CORS settings
    ([how, for Fastify](recipes.md#connect-the-browser-and-the-backend-into-one-trace)).
 

@@ -121,6 +121,30 @@ logger.error({ traceId: getTraceId() }, 'failed');                             /
 
 Before you record anything, read [what never to record](conventions.md#what-never-to-record).
 
+## Express services
+
+The Express instrumentation wraps every middleware in its own span, so `setSpanAttributes` called from a middleware
+puts the label on that small "middleware" span instead of the request span. Switch those spans off, which also makes
+traces shorter and easier to read:
+
+```ts
+startTelemetry({
+  autoInstrumentations: {
+    "@opentelemetry/instrumentation-express": { ignoreLayersType: ["middleware" as never] },
+  },
+});
+```
+
+Route params (`:workflow_id`) are only known once a route matches. Record them with `router.param(...)`, and ids from the
+body or query with a middleware mounted after the body parser. `workflow-executor` does both in
+`src/utils/request_telemetry.ts`.
+
+## TypeScript projects
+
+Projects that still use `"moduleResolution": "Node"` (the old default) can import `@ablecredit/telemetry/node`, because the
+package ships `typesVersions`. If you see `TS2307: Cannot find module '@ablecredit/telemetry/node'`, your installed version
+predates that fix: update the package.
+
 ## ES module services
 
 If your service uses `"type": "module"`, libraries are only patched when OpenTelemetry's loader hook is also active:

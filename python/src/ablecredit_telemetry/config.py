@@ -100,5 +100,7 @@ class TelemetryConfig:
         if self.service_version:
             attributes["service.version"] = self.service_version
         if self.environment:
+            # Current OpenTelemetry name, plus the older one that SigNoz's "Deployment Environment" filter still reads.
             attributes["deployment.environment.name"] = self.environment
+            attributes["deployment.environment"] = self.environment
         return attributes

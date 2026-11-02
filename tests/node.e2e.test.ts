@@ -46,7 +46,7 @@ describe('startTelemetry', () => {
     expect(handle.enabled).toBe(true);
     expect(startTelemetry({ endpoint: baseUrl, env: {} })).toBe(handle);
 
-    await withSpan('e2e', 'unit-of-work', () => setSpanAttributes({ 'application.id': 'ACGR1A116C11521BC39A509' }));
+    await withSpan('e2e', 'unit-of-work', () => setSpanAttributes({ 'application.id': 'EXAMPLE-APP-0001' }));
     await handle.shutdown();
 
     const traces = received.filter((r) => r.path === '/v1/traces');
@@ -54,7 +54,7 @@ describe('startTelemetry', () => {
     const body = traces.map((t) => t.body).join('');
     expect(body).toContain('e2e-service');
     expect(body).toContain('unit-of-work');
-    expect(body).toContain('ACGR1A116C11521BC39A509');
+    expect(body).toContain('EXAMPLE-APP-0001');
     expect(traces[0]?.headers['x-api-key']).toBe('secret');
   });
 });

@@ -16,9 +16,12 @@ exactly that way.
 | Attribute | Use |
 |---|---|
 | `application.id` | The loan/application the work is about. |
-| `tenant.id` | The customer organisation. |
+| `org.id` | The customer organisation. |
 | `product.type` | Product or flow, e.g. `loan`. |
 | `user.id` | Internal user id (not name or email). |
+| `workflow.id` | The workflow a request is about (workflow-executor). |
+| `node.id` | The workflow node a request is about. |
+| `template.id` | The workflow template a request is about. |
 
 Add new names to this table when you introduce them.
 

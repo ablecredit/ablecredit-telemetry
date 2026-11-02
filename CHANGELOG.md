@@ -3,6 +3,13 @@
 All notable changes are recorded here. Versions follow [semver](https://semver.org); consumers pin a git tag
 (for example `#v0.1.0`).
 
+## Unreleased
+
+- Types: added `typesVersions`, so TypeScript projects that still use `"moduleResolution": "Node"` can import `@ablecredit/telemetry/node` and `/web` (they failed with TS2307 before).
+- Resource attributes: the environment is now recorded as both `deployment.environment` (read by SigNoz's *Deployment Environment* filter) and `deployment.environment.name`.
+- Web: the telemetry endpoint is now excluded from tracing by a prefix pattern (a plain string never matched `/v1/traces`).
+- Docs: clarified that string URLs in `propagateTraceHeaderCorsUrls` / `ignoreUrls` must match the whole URL.
+
 ## 0.1.0
 
 Initial release.

@@ -49,7 +49,7 @@ Contents:
   from ablecredit_telemetry import set_span_attributes
   set_span_attributes({"application.id": application_id})
   ```
-  In SigNoz: *Traces* → *Add filter* → `application.id` `=` `ACGR1A116C11521BC39A509`.
+  In SigNoz: *Traces* → *Add filter* → `application.id` `=` `EXAMPLE-APP-0001`.
 
   Good to know: the label sits on **one span** (the request). Search finds the whole trace through that span; the
   other spans in the trace do not carry the label. Why not use the application id as the trace id? See
@@ -68,7 +68,7 @@ Contents:
   fastify.addHook('onRequest', async (request) => {
     setSpanAttributes({
       'application.id': request.params?.applicationId,   // missing values are skipped, not an error
-      'tenant.id': request.user?.tenantId,
+      'org.id': request.auth_org_id,
     });
   });
   ```

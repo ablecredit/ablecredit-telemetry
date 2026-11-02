@@ -10,7 +10,7 @@ passed as options to `initWebTelemetry`.
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `endpoint` | none | Base URL of the SigNoz collector's OTLP/HTTP receiver, e.g. `http://signoz.internal:4318`. **Telemetry is off when this is empty.** Do not add `/v1/traces`; a pasted signal path is stripped. |
 | `OTEL_SERVICE_NAME` | `serviceName` / `service_name` | `unknown-service` | How the service appears in SigNoz. Must be unique per service. |
 | `OTEL_SERVICE_VERSION` | `serviceVersion` / `service_version` | none | Release version, shown as `service.version`. |
-| `DEPLOYMENT_ENVIRONMENT` | `environment` | none | `production`, `staging`, ... Recorded as `deployment.environment.name`. Also read from `OTEL_RESOURCE_ATTRIBUTES` (`deployment.environment=...`). |
+| `DEPLOYMENT_ENVIRONMENT` | `environment` | none | `production`, `staging`, ... Recorded as `deployment.environment` (what SigNoz's *Deployment Environment* filter reads) and `deployment.environment.name`. Also read from `OTEL_RESOURCE_ATTRIBUTES` (`deployment.environment=...`). |
 | `OTEL_EXPORTER_OTLP_HEADERS` | `headers` | none | `key=value,key2=value2` sent with every export, e.g. an ingestion key. Explicit headers win. |
 | `OTEL_RESOURCE_ATTRIBUTES` | `resourceAttributes` / `resource_attributes` | none | Extra attributes attached to everything the service emits. |
 | `OTEL_ENABLED` | `enabled: false` | on | `false`/`0`/`no`/`off` turns telemetry off even if an endpoint is set. |
@@ -38,7 +38,7 @@ passed as options to `initWebTelemetry`.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `propagateTraceHeaderCorsUrls` | none | Backend URLs that get the `traceparent` header. Same-origin requests always do. |
+| `propagateTraceHeaderCorsUrls` | none | Backend URLs that get the `traceparent` header. Same-origin requests always do. Strings must equal the whole URL; use a RegExp to match an address prefix. |
 | `ignoreUrls` | none | URLs not to trace. The telemetry endpoint is always excluded. |
 | `sampleRatio` | `1` | Fraction of traces to record (0 to 1). |
 | `instrumentations` | all on | `{ documentLoad, fetch, xhr }`, set any to `false` to turn it off. |

@@ -61,4 +61,5 @@ def test_resource_attributes():
         "service.name": "api",
         "service.version": "1.2.3",
         "deployment.environment.name": "staging",
+        "deployment.environment": "staging",
     }

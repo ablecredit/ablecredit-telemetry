@@ -72,7 +72,7 @@ def test_dependency_tags_the_server_span_with_the_application_id():
         return {"id": application_id}
 
     instrument_fastapi(app)
-    TestClient(app).get("/applications/ACGR1A116C11521BC39A509")
+    TestClient(app).get("/applications/EXAMPLE-APP-0001")
 
     server_spans = [s for s in exporter.get_finished_spans() if s.kind.name == "SERVER"]
-    assert [dict(s.attributes or {}).get("application.id") for s in server_spans] == ["ACGR1A116C11521BC39A509"]
+    assert [dict(s.attributes or {}).get("application.id") for s in server_spans] == ["EXAMPLE-APP-0001"]

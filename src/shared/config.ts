@@ -99,6 +99,10 @@ export function buildResourceAttributes(config: ResolvedConfig): Record<string, 
     'service.name': config.serviceName,
   };
   if (config.serviceVersion) attributes['service.version'] = config.serviceVersion;
-  if (config.environment) attributes['deployment.environment.name'] = config.environment;
+  if (config.environment) {
+    // Current OpenTelemetry name, plus the older one that SigNoz's "Deployment Environment" filter still reads.
+    attributes['deployment.environment.name'] = config.environment;
+    attributes['deployment.environment'] = config.environment;
+  }
   return attributes;
 }
