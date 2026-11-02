@@ -84,3 +84,40 @@ describe('flushing when a process finishes by itself', () => {
     expect(body).toContain('short-lived-job');
   });
 });
+
+describe('one trace across a delayed hand-over', () => {
+  const dist = fileURLToPath(new URL('../dist/node.cjs', import.meta.url));
+
+  // Needs the built package (`npm run build`), which CI runs before the tests.
+  it.skipIf(!existsSync(dist))('keeps work done later inside the trace that captured its context', async () => {
+    const before = received.length;
+    const script = `
+      const { startTelemetry, withSpan, captureTraceContext, runInTraceContext } = require(${JSON.stringify(dist)});
+      startTelemetry({ endpoint: ${JSON.stringify(baseUrl)}, serviceName: 'handover', env: {} });
+      (async () => {
+        let saved;
+        await withSpan('child', 'create-request', () => { saved = captureTraceContext(); });
+        // later, with no request around: a background worker picks the job up
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await runInTraceContext(saved, () => withSpan('child', 'process-job', () => undefined));
+      })();
+    `;
+    const exitCode = await new Promise<number | null>((resolve) => {
+      const child = spawn(process.execPath, ['-e', script], { stdio: 'inherit' });
+      child.on('close', resolve);
+    });
+    expect(exitCode).toBe(0);
+
+    const spans = received
+      .slice(before)
+      .filter((r) => r.path === '/v1/traces')
+      .flatMap((r) => JSON.parse(r.body).resourceSpans)
+      .flatMap((rs: { scopeSpans: Array<{ spans: Array<Record<string, string>> }> }) => rs.scopeSpans)
+      .flatMap((ss: { spans: Array<Record<string, string>> }) => ss.spans);
+    const create = spans.find((s) => s.name === 'create-request');
+    const job = spans.find((s) => s.name === 'process-job');
+    expect(create && job).toBeTruthy();
+    expect(job?.traceId).toBe(create?.traceId);
+    expect(job?.parentSpanId).toBe(create?.spanId);
+  });
+});

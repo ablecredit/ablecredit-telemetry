@@ -13,6 +13,8 @@ import type { BaseTelemetryOptions, TelemetryHandle } from '../shared/types.js';
 import { urlPrefixPattern } from '../shared/url.js';
 
 export { getTraceId, setSpanAttributes, withSpan } from '../shared/span.js';
+export { captureTraceContext, runInTraceContext, withoutTracing } from '../shared/propagation.js';
+export type { TraceCarrier } from '../shared/propagation.js';
 export type { AttributeInput, TelemetryHandle } from '../shared/types.js';
 
 export interface WebTelemetryOptions extends BaseTelemetryOptions {

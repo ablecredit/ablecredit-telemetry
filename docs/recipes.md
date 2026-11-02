@@ -14,6 +14,8 @@ Contents:
 [Record an error](#record-an-error) ·
 [Connect the browser and the backend](#connect-the-browser-and-the-backend-into-one-trace) ·
 [Follow a job across a queue](#follow-a-background-job-across-a-queue) ·
+[Keep a long-running job in one trace](#keep-a-long-running-job-in-one-trace) ·
+[Keep a polling loop out of the traces](#keep-a-polling-loop-out-of-the-traces) ·
 [Hide noisy endpoints](#hide-noisy-endpoints) ·
 [Count something (custom metric)](#count-something-custom-metric) ·
 [Turn telemetry off](#turn-telemetry-off) ·
@@ -195,6 +197,46 @@ Contents:
             handle(message)
     ```
   A worker that starts its own job (for example from a database poll) has no request to join, so it starts a new trace.
+
+## Keep a long-running job in one trace
+
+- **What:** work that happens later, outside any request (a background picker, a callback minutes afterwards), shows up in
+  the same trace as the request that started it, instead of a trace of its own.
+- **Where:** two places: the request that starts the job, and the code that later does the work.
+- **How:** save the trace when the job is created, and restore it when the job runs.
+  ```js
+  const { captureTraceContext, runInTraceContext, withSpan } = require('@ablecredit/telemetry/node');
+
+  // 1. in the request that creates the job: keep the trace with the job's record
+  await Job.create({ ...fields, trace_context: captureTraceContext() });
+
+  // 2. later, in the worker that runs it (no request around):
+  await runInTraceContext(job.trace_context, () =>
+    withSpan('worker', 'run job', () => doTheWork(job), { 'job.id': job.id }));
+  ```
+  Calls made inside (HTTP, queues, databases) are children of the saved span, so the trace continues into other services
+  too. With an old record that has no saved trace, `runInTraceContext` just runs the work as before.
+- **A retry is its own trace.** If a later request re-runs the job, save that request's trace on the job again. The re-run
+  then belongs to the retry request's trace, and the original run's trace stays as it was. Give both the same
+  `application.id` / `job.id` attributes so they are found together.
+- **A callback from outside** (another system posting a result back, with no trace header) cannot join a trace by itself.
+  Restore the saved trace as above, and put the saved trace id on the callback's own request span
+  (`setSpanAttributes({ 'job.trace_id': ... })`) so it can be followed to the run.
+- Only the trace identity is saved (`traceparent`, optionally `tracestate`). Nothing else travels with it.
+
+## Keep a polling loop out of the traces
+
+- **What:** "check the queue every second" stops producing a trace per poll.
+- **Where:** around the polling call only, not around the work it finds.
+- **How:**
+  ```js
+  const { withoutTracing } = require('@ablecredit/telemetry/node');
+
+  const messages = await withoutTracing(() => pollQueue());   // the poll is not recorded
+  for (const m of messages) await handle(m);                  // the work is, as usual
+  ```
+  Without this, a loop that runs every second records about 86,000 traces a day that say nothing useful, and buries the
+  real ones.
 
 ## Hide noisy endpoints
 

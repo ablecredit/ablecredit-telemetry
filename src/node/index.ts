@@ -11,6 +11,8 @@ import { buildResourceAttributes, resolveConfig, signalUrl } from '../shared/con
 import type { BaseTelemetryOptions, TelemetryHandle } from '../shared/types.js';
 
 export { getTraceId, setSpanAttributes, withSpan } from '../shared/span.js';
+export { captureTraceContext, runInTraceContext, withoutTracing } from '../shared/propagation.js';
+export type { TraceCarrier } from '../shared/propagation.js';
 export type { AttributeInput, TelemetryHandle } from '../shared/types.js';
 
 type AutoInstrumentationConfig = NonNullable<Parameters<typeof getNodeAutoInstrumentations>[0]>;

@@ -5,6 +5,8 @@ All notable changes are recorded here. Versions follow [semver](https://semver.o
 
 ## Unreleased
 
+- New helpers (`/node` and `/web`): `captureTraceContext()` and `runInTraceContext()` keep work that runs later, outside any request, in the
+  trace of the request that started it; `withoutTracing()` keeps polling loops out of the traces.
 - Types: added `typesVersions`, so TypeScript projects that still use `"moduleResolution": "Node"` can import `@ablecredit/telemetry/node` and `/web` (they failed with TS2307 before).
 - Resource attributes: the environment is now recorded as both `deployment.environment` (read by SigNoz's *Deployment Environment* filter) and `deployment.environment.name`.
 - Web: the telemetry endpoint is now excluded from tracing by a prefix pattern (a plain string never matched `/v1/traces`).
