@@ -1,5 +1,6 @@
 """OpenTelemetry setup for AbleCredit Python services, exported to SigNoz over OTLP/HTTP."""
 
+from .body import record_request_body, request_body_capture_enabled, sanitize_body
 from .config import TelemetryConfig
 from .exporters import otlp_log_processor, otlp_metric_reader, otlp_span_processor
 from .instrumentation import instrument_fastapi, instrument_libraries
@@ -18,6 +19,9 @@ __all__ = [
     "otlp_log_processor",
     "otlp_metric_reader",
     "otlp_span_processor",
+    "record_request_body",
+    "request_body_capture_enabled",
+    "sanitize_body",
     "set_span_attributes",
     "setup_telemetry",
     "span",

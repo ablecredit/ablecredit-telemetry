@@ -25,6 +25,24 @@ exactly that way.
 
 Add new names to this table when you introduce them.
 
+## Request bodies
+
+Request bodies are recorded on the request span as `http.request.body`, **never as they are**. `recordRequestBody` (Node) and
+`record_request_body` (Python) clean the body first, with the same rules in both languages:
+
+| Rule | Effect |
+|---|---|
+| Sensitive **keys** | The value is replaced by `[redacted]`: passwords, tokens, secrets, cookies, sessions, OTP/PIN/CVV, mobile/phone/email, address, names of people, date of birth, gender and similar, PAN/Aadhaar/passport/voter/licence/KYC, bank account/IFSC/UPI/card, salary/income/balance/credit score, location and biometrics. |
+| Sensitive-looking **values** | Masked anywhere inside a string, even under harmless keys: PAN, Aadhaar, mobile numbers, email, UPI handles, IFSC, GSTIN, voter id, passport, driving licence, card numbers (checked with the Luhn test and the card-network prefix), JWTs, bearer tokens, AWS keys, private keys, IP addresses, secret URL parameters (`X-Amz-Signature`, `token`, `code`, ...), passwords inside URLs, long key-like strings. |
+| **Ids** stay readable | Values under id-like keys (`application_id`, `file_ids`, `_id`, ...) skip the loose number and long-string rules, so `ACDE1A187394268679AE9C5` is not mistaken for an Aadhaar number. Strict rules (PAN, email, tokens, cards) still apply. |
+| **Size** | Strings over 200 characters become `[string N chars]` (never a prefix), arrays keep 30 items, nesting stops at 6 levels, binary data becomes `[binary N bytes]`, the whole result is capped at 4096 characters. |
+| **Skipped entirely** | Credential-like routes (`/auth`, `/login`, `/otp`, `/password`, `/token`, `/refresh`, `/verify`, `/register`, `/sso`, `/vpd`) and file or binary bodies (multipart, images, audio, PDF, octet-stream). |
+
+Set `OTEL_CAPTURE_REQUEST_BODY=false` to turn it off for a process. A masked body is still stored in SigNoz (and Axiom, for the
+service that sends spans there), so keep adding keys you consider sensitive: pass `redactKeys` / `redact_keys`.
+What the masking cannot know is free text that is sensitive only in meaning (a name written inside a remark). Keep such fields
+out of request bodies you record, or add their key to `redactKeys`.
+
 ## Attributes versus the trace id
 
 Keep trace ids random, one per request. To find traces for an application, set `application.id` on a span and filter on

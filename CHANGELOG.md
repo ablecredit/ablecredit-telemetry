@@ -5,6 +5,9 @@ All notable changes are recorded here. Versions follow [semver](https://semver.o
 
 ## Unreleased
 
+- Request bodies: `recordRequestBody` (Node) and `record_request_body` / `sanitize_body` (Python) record a request body as `http.request.body`,
+  masked (sensitive keys and values), shortened and size-capped, with the same rules in both languages. Credential-like routes and file
+  uploads are skipped; `OTEL_CAPTURE_REQUEST_BODY=false` turns it off.
 - Python: `otlp_span_processor`, `otlp_metric_reader` and `otlp_log_processor` add SigNoz to providers a service already owns (for example
   one that exports to Axiom). `setup_telemetry` gained `traces`, `metrics` and `logs` switches, and its log handler no longer re-exports
   the exporter's own log lines.

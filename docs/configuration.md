@@ -15,6 +15,7 @@ passed as options to `initWebTelemetry`.
 | `OTEL_RESOURCE_ATTRIBUTES` | `resourceAttributes` / `resource_attributes` | none | Extra attributes attached to everything the service emits. |
 | `OTEL_ENABLED` | `enabled: false` | on | `false`/`0`/`no`/`off` turns telemetry off even if an endpoint is set. |
 | `OTEL_SDK_DISABLED` | none | off | Standard OpenTelemetry kill switch; `true` turns everything off. |
+| `OTEL_CAPTURE_REQUEST_BODY` | none | on | `false` / `0` / `no` / `off` stops recording the (masked) request body as `http.request.body`. See [Conventions](conventions.md#request-bodies). |
 
 ## Behaviour that follows from this
 

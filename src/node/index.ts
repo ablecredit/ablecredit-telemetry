@@ -13,6 +13,10 @@ import type { BaseTelemetryOptions, TelemetryHandle } from '../shared/types.js';
 export { getTraceId, setSpanAttributes, withSpan } from '../shared/span.js';
 export { captureTraceContext, runInTraceContext, withoutTracing } from '../shared/propagation.js';
 export type { TraceCarrier } from '../shared/propagation.js';
+export { recordRequestBody, requestBodyCaptureEnabled } from './body.js';
+export type { RecordRequestBodyOptions } from './body.js';
+export { sanitizeBody } from '../shared/body.js';
+export type { BodySanitizeOptions } from '../shared/body.js';
 export type { AttributeInput, TelemetryHandle } from '../shared/types.js';
 
 type AutoInstrumentationConfig = NonNullable<Parameters<typeof getNodeAutoInstrumentations>[0]>;
