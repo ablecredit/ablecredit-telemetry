@@ -19,10 +19,21 @@ function parseJsonBody(body: unknown): unknown {
   }
 }
 
+/**
+ * The URL the instrumentation recorded on the span. Used when the request itself has no URL (fetch with a plain init, or
+ * a request that failed before any response), so credential routes are still skipped.
+ */
+function spanUrl(span: Span): string | undefined {
+  const attributes = (span as unknown as { attributes?: Record<string, unknown> }).attributes ?? {};
+  const url = attributes['http.url'] ?? attributes['url.full'];
+  return typeof url === 'string' ? url : undefined;
+}
+
 /** Put the cleaned body on the span as `http.request.body`. Never throws. */
 export function recordBodyOnSpan(span: Span, body: unknown, url: string | undefined, options: WebBodyOptions = {}): void {
   try {
-    if (url && (options.skipUrls ?? DEFAULT_SKIP_URLS).test(url)) return;
+    const target = url || spanUrl(span);
+    if (target && (options.skipUrls ?? DEFAULT_SKIP_URLS).test(target)) return;
     const text = sanitizeBody(parseJsonBody(body), options);
     if (text) span.setAttribute('http.request.body', text);
   } catch {
