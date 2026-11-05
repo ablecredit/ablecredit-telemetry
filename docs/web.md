@@ -123,3 +123,14 @@ handle with `shutdown()`, mostly useful in tests.
 | Nothing arrives, console shows a CORS error | [Troubleshooting](troubleshooting.md#browser-nothing-arrives-console-shows-a-cors-error) |
 | Frontend and backend show as two traces | [Troubleshooting](troubleshooting.md#browser-and-backend-show-as-two-separate-traces) |
 | API calls fail after enabling it | [Troubleshooting](troubleshooting.md#browser-api-calls-start-failing-after-enabling-telemetry) |
+
+## Request bodies
+
+`fetch` and XHR (axios) calls record their body on the span as `http.request.body`, cleaned with the same rules as the Node
+side (see [Conventions](conventions.md#request-bodies)): sensitive keys and values redacted, long values shortened, size capped,
+login/otp/token routes skipped. Only JSON string bodies are recorded; files, forms and streams never are. On by default.
+
+```ts
+initWebTelemetry({ serviceName: 'dashboard-client', captureRequestBody: false });          // off
+initWebTelemetry({ serviceName: 'dashboard-client', captureRequestBody: { redactKeys: /remark/ } }); // extra keys
+```

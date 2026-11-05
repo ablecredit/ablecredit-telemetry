@@ -8,9 +8,12 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchSpanProcessor, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { trace } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import { buildResourceAttributes, resolveConfig, signalUrl } from '../shared/config.js';
 import type { BaseTelemetryOptions, TelemetryHandle } from '../shared/types.js';
 import { urlPrefixPattern } from '../shared/url.js';
+import { recordBodyOnSpan, trackXhrBodies, xhrBody } from './body.js';
+import type { WebBodyOptions } from './body.js';
 
 export { getTraceId, setSpanAttributes, withSpan } from '../shared/span.js';
 export { captureTraceContext, runInTraceContext, withoutTracing } from '../shared/propagation.js';
@@ -38,6 +41,12 @@ export interface WebTelemetryOptions extends BaseTelemetryOptions {
   sampleRatio?: number;
   /** Turn individual instrumentations off. All default to on. */
   instrumentations?: { documentLoad?: boolean; fetch?: boolean; xhr?: boolean };
+  /**
+   * Record the request body of fetch / XHR calls on the span as `http.request.body`. Only JSON string bodies are
+   * recorded, and always cleaned first (sensitive values redacted, long values shortened, size capped; login/otp/token
+   * routes skipped). Defaults to true. Pass `false` to turn off, or an object to tune the cleaning (`redactKeys`, ...).
+   */
+  captureRequestBody?: boolean | WebBodyOptions;
   /** Record uncaught errors and unhandled promise rejections as spans. Defaults to true. */
   captureErrors?: boolean;
 }
@@ -70,13 +79,31 @@ export function initWebTelemetry(options: WebTelemetryOptions): TelemetryHandle 
   // Never trace the exporter's own requests, or every export would create a span that triggers another export.
   const ignoreUrls = [urlPrefixPattern(endpoint), ...(options.ignoreUrls ?? [])];
   const toggles = options.instrumentations ?? {};
+  const bodyOptions: WebBodyOptions | undefined =
+    options.captureRequestBody === false ? undefined : options.captureRequestBody === true ? {} : (options.captureRequestBody ?? {});
   const httpOptions = { propagateTraceHeaderCorsUrls: options.propagateTraceHeaderCorsUrls, ignoreUrls };
+  const fetchOptions = {
+    ...httpOptions,
+    ...(bodyOptions && {
+      applyCustomAttributesOnSpan: (span: Span, request: Request | RequestInit, result: unknown) => {
+        const url = typeof request === 'object' && 'url' in request ? request.url : (result as { url?: string } | undefined)?.url;
+        recordBodyOnSpan(span, (request as RequestInit).body, url, bodyOptions);
+      },
+    }),
+  };
+  const xhrOptions = {
+    ...httpOptions,
+    ...(bodyOptions && {
+      applyCustomAttributesOnSpan: (span: Span, xhr: XMLHttpRequest) => recordBodyOnSpan(span, xhrBody(xhr), xhr.responseURL, bodyOptions),
+    }),
+  };
+  const untrackXhrBodies = bodyOptions && toggles.xhr !== false ? trackXhrBodies() : () => undefined;
 
   const unregister = registerInstrumentations({
     instrumentations: [
       ...(toggles.documentLoad === false ? [] : [new DocumentLoadInstrumentation()]),
-      ...(toggles.fetch === false ? [] : [new FetchInstrumentation(httpOptions)]),
-      ...(toggles.xhr === false ? [] : [new XMLHttpRequestInstrumentation(httpOptions)]),
+      ...(toggles.fetch === false ? [] : [new FetchInstrumentation(fetchOptions)]),
+      ...(toggles.xhr === false ? [] : [new XMLHttpRequestInstrumentation(xhrOptions)]),
     ],
   });
 
@@ -90,6 +117,7 @@ export function initWebTelemetry(options: WebTelemetryOptions): TelemetryHandle 
       stopped = true;
       removeErrorListeners();
       unregister();
+      untrackXhrBodies();
       await provider.shutdown();
       activeHandle = undefined;
     },
